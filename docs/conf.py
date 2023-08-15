@@ -62,7 +62,7 @@ RTD = bool(os.environ.get('READTHEDOCS', ''))
 # If your documentation needs a minimal Sphinx version, state it here.
 needs_sphinx = '1.3'  # Due to sphinx.ext.napoleon
 if needs_sphinx > sphinx.__version__:
-    message = 'This project needs at least Sphinx v%s' % needs_sphinx
+    message = f'This project needs at least Sphinx v{needs_sphinx}'
     raise VersionRequirementError(message)
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -97,7 +97,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'LightGBM'
-copyright = '%s, Microsoft Corporation' % str(datetime.datetime.now().year)
+copyright = f'{datetime.datetime.now().year}, Microsoft Corporation'
 author = 'Microsoft Corporation'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -173,9 +173,8 @@ def generate_doxygen_xml(app):
         The application object representing the Sphinx process.
     """
     doxygen_args = [
-        "INPUT={}".format(os.path.join(CURR_PATH, os.path.pardir,
-                                       'include', 'LightGBM', 'c_api.h')),
-        "OUTPUT_DIRECTORY={}".format(os.path.join(CURR_PATH, 'doxyoutput')),
+        f"INPUT={os.path.join(CURR_PATH, os.path.pardir, 'include', 'LightGBM', 'c_api.h')}",
+        f"OUTPUT_DIRECTORY={os.path.join(CURR_PATH, 'doxyoutput')}",
         "GENERATE_HTML=NO",
         "GENERATE_LATEX=NO",
         "GENERATE_XML=YES",
@@ -190,8 +189,8 @@ def generate_doxygen_xml(app):
         "SORT_BRIEF_DOCS=YES",
         "WARN_AS_ERROR=YES",
     ]
-    doxygen_input = '\n'.join(doxygen_args)
     is_py3 = sys.version[0] == "3"
+    doxygen_input = '\n'.join(doxygen_args)
     if is_py3:
         doxygen_input = bytes(doxygen_input, "utf-8")
     if not os.path.exists(os.path.join(CURR_PATH, 'doxyoutput')):

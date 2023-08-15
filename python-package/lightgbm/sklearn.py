@@ -365,8 +365,8 @@ class LGBMModel(_LGBMModelBase):
         """
         for key, value in params.items():
             setattr(self, key, value)
-            if hasattr(self, '_' + key):
-                setattr(self, '_' + key, value)
+            if hasattr(self, f'_{key}'):
+                setattr(self, f'_{key}', value)
             self._other_params[key] = value
         return self
 
@@ -492,7 +492,13 @@ class LGBMModel(_LGBMModelBase):
         evals_result = {}
         params = self.get_params()
         # user can set verbose with kwargs, it has higher priority
-        if not any(verbose_alias in params for verbose_alias in _ConfigAliases.get("verbosity")) and self.silent:
+        if (
+            all(
+                verbose_alias not in params
+                for verbose_alias in _ConfigAliases.get("verbosity")
+            )
+            and self.silent
+        ):
             params['verbose'] = -1
         params.pop('silent', None)
         params.pop('importance_type', None)
@@ -784,11 +790,10 @@ class LGBMClassifier(LGBMModel, _LGBMClassifierBase):
                 eval_metric = "multi_logloss"
             elif eval_metric in {'error', 'binary_error'}:
                 eval_metric = "multi_error"
-        else:
-            if eval_metric in {'logloss', 'multi_logloss'}:
-                eval_metric = 'binary_logloss'
-            elif eval_metric in {'error', 'multi_error'}:
-                eval_metric = 'binary_error'
+        elif eval_metric in {'logloss', 'multi_logloss'}:
+            eval_metric = 'binary_logloss'
+        elif eval_metric in {'error', 'multi_error'}:
+            eval_metric = 'binary_error'
 
         # do not modify args, as it causes errors in model selection tools
         valid_sets = None
@@ -824,9 +829,8 @@ class LGBMClassifier(LGBMModel, _LGBMClassifierBase):
                                     pred_leaf, pred_contrib, **kwargs)
         if callable(self._objective) or raw_score or pred_leaf or pred_contrib:
             return result
-        else:
-            class_index = np.argmax(result, axis=1)
-            return self._le.inverse_transform(class_index)
+        class_index = np.argmax(result, axis=1)
+        return self._le.inverse_transform(class_index)
 
     predict.__doc__ = LGBMModel.predict.__doc__
 

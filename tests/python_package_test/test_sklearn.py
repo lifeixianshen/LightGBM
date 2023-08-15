@@ -705,7 +705,10 @@ class TestSklearn(unittest.TestCase):
         iter_valid1_l2 = 18
         iter_valid2_l1 = 11
         iter_valid2_l2 = 7
-        self.assertEqual(len(set([iter_valid1_l1, iter_valid1_l2, iter_valid2_l1, iter_valid2_l2])), 4)
+        self.assertEqual(
+            len({iter_valid1_l1, iter_valid1_l2, iter_valid2_l1, iter_valid2_l2}),
+            4,
+        )
         iter_min_l1 = min([iter_valid1_l1, iter_valid2_l1])
         iter_min_l2 = min([iter_valid1_l2, iter_valid2_l2])
         iter_min = min([iter_min_l1, iter_min_l2])

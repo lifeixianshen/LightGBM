@@ -24,7 +24,7 @@ def find_lib():
     exec(compile(open(libpath_py, "rb").read(), libpath_py, 'exec'), libpath, libpath)
 
     LIB_PATH = [os.path.relpath(path, CURRENT_DIR) for path in libpath['find_lib_path']()]
-    logger.info("Installing lib_lightgbm from: %s" % LIB_PATH)
+    logger.info(f"Installing lib_lightgbm from: {LIB_PATH}")
     return LIB_PATH
 
 
@@ -153,7 +153,7 @@ def compile_cpp(use_mingw=False, use_gpu=False, use_mpi=False,
                 arch = "Win32" if bit32 else "x64"
                 vs_versions = ("Visual Studio 16 2019", "Visual Studio 15 2017", "Visual Studio 14 2015")
                 for vs in vs_versions:
-                    logger.info("Starting to compile with %s." % vs)
+                    logger.info(f"Starting to compile with {vs}.")
                     status = silent_call(cmake_cmd + ["-G", vs, "-A", arch])
                     if status == 0:
                         break
@@ -254,7 +254,7 @@ class CustomInstall(install):
         self.bit32 = 0
 
     def run(self):
-        if (8 * struct.calcsize("P")) != 64:
+        if struct.calcsize("P") != 8:
             if self.bit32:
                 logger.warning("You're installing 32-bit version. "
                                "This version is slow and untested, so use it on your own risk.")

@@ -91,8 +91,7 @@ def get_names(infos):
     """
     names = []
     for x in infos:
-        for y in x:
-            names.append(y["name"][0])
+        names.extend(y["name"][0] for y in x)
     return names
 
 
@@ -115,8 +114,7 @@ def get_alias(infos):
             if "alias" in y:
                 name = y["name"][0]
                 alias = y["alias"][0].split(',')
-                for name2 in alias:
-                    pairs.append((name2.strip(), name))
+                pairs.extend((name2.strip(), name) for name2 in alias)
     return pairs
 
 

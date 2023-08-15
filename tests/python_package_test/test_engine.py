@@ -597,11 +597,11 @@ class TestEngine(unittest.TestCase):
         X_train, y_train = load_boston(True)
         params = {'verbose': -1}
         lgb_train = lgb.Dataset(X_train, y_train)
-        feature_names = ['f_' + str(i) for i in range(X_train.shape[-1])]
+        feature_names = [f'f_{str(i)}' for i in range(X_train.shape[-1])]
         gbm = lgb.train(params, lgb_train, num_boost_round=5, feature_name=feature_names)
         self.assertListEqual(feature_names, gbm.feature_name())
         # test feature_names with whitespaces
-        feature_names_with_space = ['f ' + str(i) for i in range(X_train.shape[-1])]
+        feature_names_with_space = [f'f {str(i)}' for i in range(X_train.shape[-1])]
         gbm = lgb.train(params, lgb_train, num_boost_round=5, feature_name=feature_names_with_space)
         self.assertListEqual(feature_names, gbm.feature_name())
 
@@ -1012,7 +1012,7 @@ class TestEngine(unittest.TestCase):
             'min_data_in_bin': 1,
             'boost_from_average': True
         }
-        params.update(more_params)
+        params |= more_params
         lgb_train = lgb.Dataset(X_train, y_train, params=params)
         gbm = lgb.train(params, lgb_train, num_boost_round=2)
         pred = gbm.predict(X_train)
@@ -1443,7 +1443,7 @@ class TestEngine(unittest.TestCase):
         self.assertRaises(lgb.basic.LightGBMError, get_cv_result,
                           params_class_3_verbose, metrics='binary_error', fobj=dummy_obj)
 
-    @unittest.skipIf(psutil.virtual_memory().available / 1024 / 1024 / 1024 < 3, 'not enough RAM')
+    @unittest.skipIf(psutil.virtual_memory().available < 3221225472, 'not enough RAM')
     def test_model_size(self):
         X, y = load_boston(True)
         data = lgb.Dataset(X, y)
@@ -1535,12 +1535,11 @@ class TestEngine(unittest.TestCase):
         if np.__version__ > '1.11.0':
             hist_vals, bin_edges = gbm.get_split_value_histogram(0, bins='auto')
             hist = gbm.get_split_value_histogram(0, bins='auto', xgboost_style=True)
+            mask = hist_vals > 0
             if lgb.compat.PANDAS_INSTALLED:
-                mask = hist_vals > 0
                 np.testing.assert_array_equal(hist_vals[mask], hist['Count'].values)
                 np.testing.assert_allclose(bin_edges[1:][mask], hist['SplitValue'].values)
             else:
-                mask = hist_vals > 0
                 np.testing.assert_array_equal(hist_vals[mask], hist[:, 1])
                 np.testing.assert_allclose(bin_edges[1:][mask], hist[:, 0])
         # test histogram is disabled for categorical features
@@ -1592,7 +1591,10 @@ class TestEngine(unittest.TestCase):
         iter_valid1_l2 = 14
         iter_valid2_l1 = 2
         iter_valid2_l2 = 15
-        self.assertEqual(len(set([iter_valid1_l1, iter_valid1_l2, iter_valid2_l1, iter_valid2_l2])), 4)
+        self.assertEqual(
+            len({iter_valid1_l1, iter_valid1_l2, iter_valid2_l1, iter_valid2_l2}),
+            4,
+        )
         iter_min_l1 = min([iter_valid1_l1, iter_valid2_l1])
         iter_min_l2 = min([iter_valid1_l2, iter_valid2_l2])
         iter_min = min([iter_min_l1, iter_min_l2])
@@ -1600,7 +1602,7 @@ class TestEngine(unittest.TestCase):
 
         iter_cv_l1 = 4
         iter_cv_l2 = 12
-        self.assertEqual(len(set([iter_cv_l1, iter_cv_l2])), 2)
+        self.assertEqual(len({iter_cv_l1, iter_cv_l2}), 2)
         iter_cv_min = min([iter_cv_l1, iter_cv_l2])
 
         # test for lgb.train

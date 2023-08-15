@@ -145,12 +145,12 @@ def train(params, train_set, num_boost_round=100,
     for alias in _ConfigAliases.get("num_iterations"):
         if alias in params:
             num_boost_round = params.pop(alias)
-            warnings.warn("Found `{}` in params. Will use it instead of argument".format(alias))
+            warnings.warn(f"Found `{alias}` in params. Will use it instead of argument")
             break
     for alias in _ConfigAliases.get("early_stopping_round"):
         if alias in params:
             early_stopping_rounds = params.pop(alias)
-            warnings.warn("Found `{}` in params. Will use it instead of argument".format(alias))
+            warnings.warn(f"Found `{alias}` in params. Will use it instead of argument")
             break
     first_metric_only = params.pop('first_metric_only', False)
 
@@ -194,7 +194,7 @@ def train(params, train_set, num_boost_round=100,
             if valid_names is not None and len(valid_names) > i:
                 name_valid_sets.append(valid_names[i])
             else:
-                name_valid_sets.append('valid_' + str(i))
+                name_valid_sets.append(f'valid_{str(i)}')
     # process callbacks
     if callbacks is None:
         callbacks = set()
@@ -313,29 +313,29 @@ def _make_n_folds(full_data, folds, nfold, params, seed, fpreproc=None, stratifi
             else:
                 flatted_group = np.zeros(num_data, dtype=np.int32)
             folds = folds.split(X=np.zeros(num_data), y=full_data.get_label(), groups=flatted_group)
+    elif any(params.get(obj_alias, "") == "lambdarank" for obj_alias in _ConfigAliases.get("objective")):
+        if not SKLEARN_INSTALLED:
+            raise LightGBMError('Scikit-learn is required for lambdarank cv.')
+        # lambdarank task, split according to groups
+        group_info = np.array(full_data.get_group(), dtype=np.int32, copy=False)
+        flatted_group = np.repeat(range_(len(group_info)), repeats=group_info)
+        group_kfold = _LGBMGroupKFold(n_splits=nfold)
+        folds = group_kfold.split(X=np.zeros(num_data), groups=flatted_group)
+    elif stratified:
+        if not SKLEARN_INSTALLED:
+            raise LightGBMError('Scikit-learn is required for stratified cv.')
+        skf = _LGBMStratifiedKFold(n_splits=nfold, shuffle=shuffle, random_state=seed)
+        folds = skf.split(X=np.zeros(num_data), y=full_data.get_label())
     else:
-        if any(params.get(obj_alias, "") == "lambdarank" for obj_alias in _ConfigAliases.get("objective")):
-            if not SKLEARN_INSTALLED:
-                raise LightGBMError('Scikit-learn is required for lambdarank cv.')
-            # lambdarank task, split according to groups
-            group_info = np.array(full_data.get_group(), dtype=np.int32, copy=False)
-            flatted_group = np.repeat(range_(len(group_info)), repeats=group_info)
-            group_kfold = _LGBMGroupKFold(n_splits=nfold)
-            folds = group_kfold.split(X=np.zeros(num_data), groups=flatted_group)
-        elif stratified:
-            if not SKLEARN_INSTALLED:
-                raise LightGBMError('Scikit-learn is required for stratified cv.')
-            skf = _LGBMStratifiedKFold(n_splits=nfold, shuffle=shuffle, random_state=seed)
-            folds = skf.split(X=np.zeros(num_data), y=full_data.get_label())
-        else:
-            if shuffle:
-                randidx = np.random.RandomState(seed).permutation(num_data)
-            else:
-                randidx = np.arange(num_data)
-            kstep = int(num_data / nfold)
-            test_id = [randidx[i: i + kstep] for i in range_(0, num_data, kstep)]
-            train_id = [np.concatenate([test_id[i] for i in range_(nfold) if k != i]) for k in range_(nfold)]
-            folds = zip_(train_id, test_id)
+        randidx = (
+            np.random.RandomState(seed).permutation(num_data)
+            if shuffle
+            else np.arange(num_data)
+        )
+        kstep = int(num_data / nfold)
+        test_id = [randidx[i: i + kstep] for i in range_(0, num_data, kstep)]
+        train_id = [np.concatenate([test_id[i] for i in range_(nfold) if k != i]) for k in range_(nfold)]
+        folds = zip_(train_id, test_id)
 
     ret = _CVBooster()
     for train_idx, test_idx in folds:
@@ -360,10 +360,7 @@ def _agg_cv_result(raw_results, eval_train_metric=False):
     metric_type = {}
     for one_result in raw_results:
         for one_line in one_result:
-            if eval_train_metric:
-                key = "{} {}".format(one_line[0], one_line[1])
-            else:
-                key = one_line[1]
+            key = f"{one_line[0]} {one_line[1]}" if eval_train_metric else one_line[1]
             metric_type[key] = one_line[3]
             cvmap.setdefault(key, [])
             cvmap[key].append(one_line[2])
@@ -500,12 +497,12 @@ def cv(params, train_set, num_boost_round=100,
         params['objective'] = 'none'
     for alias in _ConfigAliases.get("num_iterations"):
         if alias in params:
-            warnings.warn("Found `{}` in params. Will use it instead of argument".format(alias))
+            warnings.warn(f"Found `{alias}` in params. Will use it instead of argument")
             num_boost_round = params.pop(alias)
             break
     for alias in _ConfigAliases.get("early_stopping_round"):
         if alias in params:
-            warnings.warn("Found `{}` in params. Will use it instead of argument".format(alias))
+            warnings.warn(f"Found `{alias}` in params. Will use it instead of argument")
             early_stopping_rounds = params.pop(alias)
             break
     first_metric_only = params.pop('first_metric_only', False)
@@ -564,8 +561,8 @@ def cv(params, train_set, num_boost_round=100,
         cvfolds.update(fobj=fobj)
         res = _agg_cv_result(cvfolds.eval_valid(feval), eval_train_metric)
         for _, key, mean, _, std in res:
-            results[key + '-mean'].append(mean)
-            results[key + '-stdv'].append(std)
+            results[f'{key}-mean'].append(mean)
+            results[f'{key}-stdv'].append(std)
         try:
             for cb in callbacks_after_iter:
                 cb(callback.CallbackEnv(model=cvfolds,

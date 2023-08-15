@@ -17,7 +17,7 @@ from .sklearn import LGBMModel
 def _check_not_tuple_of_2_elements(obj, obj_name='obj'):
     """Check object is not tuple or does not have 2 elements."""
     if not isinstance(obj, tuple) or len(obj) != 2:
-        raise TypeError('%s must be a tuple of 2 elements.' % obj_name)
+        raise TypeError(f'{obj_name} must be a tuple of 2 elements.')
 
 
 def _float2str(value, precision=None):
@@ -197,12 +197,11 @@ def plot_split_value_histogram(booster, feature, bins=None, ax=None, width_coef=
     ax : matplotlib.axes.Axes
         The plot with specified model's feature split value histogram.
     """
-    if MATPLOTLIB_INSTALLED:
-        import matplotlib.pyplot as plt
-        from matplotlib.ticker import MaxNLocator
-    else:
+    if not MATPLOTLIB_INSTALLED:
         raise ImportError('You must install matplotlib to plot split value histogram.')
 
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
     if isinstance(booster, LGBMModel):
         booster = booster.booster_
     elif not isinstance(booster, Booster):
@@ -210,8 +209,9 @@ def plot_split_value_histogram(booster, feature, bins=None, ax=None, width_coef=
 
     hist, bins = booster.get_split_value_histogram(feature=feature, bins=bins, xgboost_style=False)
     if np.count_nonzero(hist) == 0:
-        raise ValueError('Cannot plot split value histogram, '
-                         'because feature {} was not used in splitting'.format(feature))
+        raise ValueError(
+            f'Cannot plot split value histogram, because feature {feature} was not used in splitting'
+        )
     width = width_coef * (bins[1] - bins[0])
     centred = (bins[:-1] + bins[1:]) / 2
 
@@ -326,16 +326,16 @@ def plot_metric(booster, metric=None, dataset_names=None,
 
     name = next(dataset_names)  # take one as sample
     metrics_for_one = eval_results[name]
-    num_metric = len(metrics_for_one)
     if metric is None:
+        num_metric = len(metrics_for_one)
         if num_metric > 1:
             msg = """more than one metric available, picking one to plot."""
             warnings.warn(msg, stacklevel=2)
         metric, results = metrics_for_one.popitem()
-    else:
-        if metric not in metrics_for_one:
-            raise KeyError('No given metric in eval results.')
+    elif metric in metrics_for_one:
         results = metrics_for_one[metric]
+    else:
+        raise KeyError('No given metric in eval results.')
     num_iteration, max_result, min_result = len(results), max(results), min(results)
     x_ = range_(num_iteration)
     ax.plot(x_, results, label=name)
@@ -421,7 +421,7 @@ def _to_graphviz(tree_info, show_info, feature_names, precision=3, constraints=N
                 if constraints[root['split_feature']] == -1:
                     fillcolor = "#ffdddd"  # light red
                 style = "filled"
-            label = "<" + label + ">"
+            label = f"<{label}>"
             graph.node(name, label=label, shape="rectangle", style=style, fillcolor=fillcolor)
             add(root['left_child'], total_count, name, l_dec)
             add(root['right_child'], total_count, name, r_dec)
@@ -435,7 +435,7 @@ def _to_graphviz(tree_info, show_info, feature_names, precision=3, constraints=N
                 label += '<br/>count: {0}'.format(root['leaf_count'])
             if "data_percentage" in show_info:
                 label += '<br/>{0}% of data'.format(_float2str(root['leaf_count'] / total_count * 100, 2))
-            label = "<" + label + ">"
+            label = f"<{label}>"
             graph.node(name, label=label)
         if parent is not None:
             graph.edge(parent, name, decision)
@@ -525,11 +525,7 @@ def create_tree_digraph(booster, tree_index=0, show_info=None, precision=3,
 
     model = booster.dump_model()
     tree_infos = model['tree_info']
-    if 'feature_names' in model:
-        feature_names = model['feature_names']
-    else:
-        feature_names = None
-
+    feature_names = model['feature_names'] if 'feature_names' in model else None
     monotone_constraints = model.get('monotone_constraints', None)
 
     if tree_index < len(tree_infos):
@@ -540,9 +536,14 @@ def create_tree_digraph(booster, tree_index=0, show_info=None, precision=3,
     if show_info is None:
         show_info = []
 
-    graph = _to_graphviz(tree_info, show_info, feature_names, precision, monotone_constraints, **kwargs)
-
-    return graph
+    return _to_graphviz(
+        tree_info,
+        show_info,
+        feature_names,
+        precision,
+        monotone_constraints,
+        **kwargs
+    )
 
 
 def plot_tree(booster, ax=None, tree_index=0, figsize=None, dpi=None,
@@ -584,12 +585,11 @@ def plot_tree(booster, ax=None, tree_index=0, figsize=None, dpi=None,
     ax : matplotlib.axes.Axes
         The plot with single tree.
     """
-    if MATPLOTLIB_INSTALLED:
-        import matplotlib.pyplot as plt
-        import matplotlib.image as image
-    else:
+    if not MATPLOTLIB_INSTALLED:
         raise ImportError('You must install matplotlib to plot tree.')
 
+    import matplotlib.pyplot as plt
+    import matplotlib.image as image
     for param_name in ['old_graph_attr', 'old_node_attr', 'old_edge_attr']:
         param = locals().get(param_name)
         if param is not None:

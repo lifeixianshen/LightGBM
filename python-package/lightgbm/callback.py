@@ -41,13 +41,10 @@ CallbackEnv = collections.namedtuple(
 
 def _format_eval_result(value, show_stdv=True):
     """Format metric string."""
-    if len(value) == 4:
+    if len(value) != 4 and len(value) == 5 and show_stdv:
+        return '%s\'s %s: %g + %g' % (value[0], value[1], value[2], value[4])
+    elif len(value) != 4 and len(value) == 5 or len(value) == 4:
         return '%s\'s %s: %g' % (value[0], value[1], value[2])
-    elif len(value) == 5:
-        if show_stdv:
-            return '%s\'s %s: %g + %g' % (value[0], value[1], value[2], value[4])
-        else:
-            return '%s\'s %s: %g' % (value[0], value[1], value[2])
     else:
         raise ValueError("Wrong metric value")
 
@@ -182,8 +179,10 @@ def early_stopping(stopping_rounds, first_metric_only=False, verbose=True):
     first_metric = ['']
 
     def _init(env):
-        enabled[0] = not any(env.params.get(boost_alias, "") == 'dart' for boost_alias
-                             in _ConfigAliases.get("boosting"))
+        enabled[0] = all(
+            env.params.get(boost_alias, "") != 'dart'
+            for boost_alias in _ConfigAliases.get("boosting")
+        )
         if not enabled[0]:
             warnings.warn('Early stopping is not available in dart mode')
             return
@@ -243,5 +242,6 @@ def early_stopping(stopping_rounds, first_metric_only=False, verbose=True):
                         print("Evaluated only: {}".format(eval_name_splitted[-1]))
                 raise EarlyStopException(best_iter[i], best_score_list[i])
             _final_iteration_check(env, eval_name_splitted, i)
+
     _callback.order = 30
     return _callback

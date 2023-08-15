@@ -37,10 +37,7 @@ def find_lib_path():
 
 def LoadDll():
     lib_path = find_lib_path()
-    if len(lib_path) == 0:
-        return None
-    lib = ctypes.cdll.LoadLibrary(lib_path[0])
-    return lib
+    return None if len(lib_path) == 0 else ctypes.cdll.LoadLibrary(lib_path[0])
 
 
 LIB = LoadDll()
@@ -62,9 +59,7 @@ def c_str(string):
 
 
 def load_from_file(filename, reference):
-    ref = None
-    if reference is not None:
-        ref = reference
+    ref = reference if reference is not None else None
     handle = ctypes.c_void_p()
     LIB.LGBM_DatasetCreateFromFile(
         c_str(filename),
@@ -88,7 +83,7 @@ def load_from_csr(filename, reference):
     data = []
     label = []
     with open(filename, 'r') as inp:
-        for line in inp.readlines():
+        for line in inp:
             values = line.split('\t')
             data.append([float(x) for x in values[1:]])
             label.append(float(values[0]))
@@ -96,10 +91,7 @@ def load_from_csr(filename, reference):
     label = np.array(label, dtype=np.float32)
     csr = sparse.csr_matrix(mat)
     handle = ctypes.c_void_p()
-    ref = None
-    if reference is not None:
-        ref = reference
-
+    ref = reference if reference is not None else None
     LIB.LGBM_DatasetCreateFromCSR(
         c_array(ctypes.c_int, csr.indptr),
         dtype_int32,
@@ -125,7 +117,7 @@ def load_from_csc(filename, reference):
     data = []
     label = []
     with open(filename, 'r') as inp:
-        for line in inp.readlines():
+        for line in inp:
             values = line.split('\t')
             data.append([float(x) for x in values[1:]])
             label.append(float(values[0]))
@@ -133,10 +125,7 @@ def load_from_csc(filename, reference):
     label = np.array(label, dtype=np.float32)
     csr = sparse.csc_matrix(mat)
     handle = ctypes.c_void_p()
-    ref = None
-    if reference is not None:
-        ref = reference
-
+    ref = reference if reference is not None else None
     LIB.LGBM_DatasetCreateFromCSC(
         c_array(ctypes.c_int, csr.indptr),
         dtype_int32,
@@ -162,7 +151,7 @@ def load_from_mat(filename, reference):
     data = []
     label = []
     with open(filename, 'r') as inp:
-        for line in inp.readlines():
+        for line in inp:
             values = line.split('\t')
             data.append([float(x) for x in values[1:]])
             label.append(float(values[0]))
@@ -170,10 +159,7 @@ def load_from_mat(filename, reference):
     data = np.array(mat.reshape(mat.size), copy=False)
     label = np.array(label, dtype=np.float32)
     handle = ctypes.c_void_p()
-    ref = None
-    if reference is not None:
-        ref = reference
-
+    ref = reference if reference is not None else None
     LIB.LGBM_DatasetCreateFromMat(
         data.ctypes.data_as(ctypes.POINTER(ctypes.c_void_p)),
         dtype_float64,
@@ -249,9 +235,8 @@ def test_booster():
         ctypes.byref(booster2))
     data = []
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                           '../../examples/binary_classification/binary.test'), 'r') as inp:
-        for line in inp.readlines():
-            data.append([float(x) for x in line.split('\t')[1:]])
+                               '../../examples/binary_classification/binary.test'), 'r') as inp:
+        data.extend([float(x) for x in line.split('\t')[1:]] for line in inp)
     mat = np.array(data)
     preb = np.zeros(mat.shape[0], dtype=np.float64)
     num_preb = ctypes.c_long()

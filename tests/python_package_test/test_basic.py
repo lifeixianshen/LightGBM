@@ -170,7 +170,7 @@ class TestBasic(unittest.TestCase):
             d.set_label(y)
             b1 = lgb.Booster(train_set=d1)
             b = lgb.Booster(train_set=d)
-            for k in range(10):
+            for _ in range(10):
                 b.update()
                 b1.update()
             with tempfile.NamedTemporaryFile() as df:
@@ -241,7 +241,7 @@ class TestBasic(unittest.TestCase):
         ds = lgb.Dataset(X, feature_name=names).construct()
         ds.set_label(y)
         base = lgb.Booster(train_set=ds)
-        for k in range(10):
+        for _ in range(10):
             base.update()
         with tempfile.NamedTemporaryFile() as f:
             basename = f.name
@@ -254,7 +254,7 @@ class TestBasic(unittest.TestCase):
                  {'cegb_penalty_split': 1}]
         for case in cases:
             booster = lgb.Booster(train_set=ds, params=case)
-            for k in range(10):
+            for _ in range(10):
                 booster.update()
             with tempfile.NamedTemporaryFile() as f:
                 casename = f.name
@@ -280,7 +280,7 @@ class TestBasic(unittest.TestCase):
         for (p1, p2) in pairs:
             booster1 = lgb.Booster(train_set=ds, params=p1)
             booster2 = lgb.Booster(train_set=ds, params=p2)
-            for k in range(10):
+            for _ in range(10):
                 booster1.update()
                 booster2.update()
             with tempfile.NamedTemporaryFile() as f:

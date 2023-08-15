@@ -76,8 +76,10 @@ class TestBasic(unittest.TestCase):
                                              title='Histogram for feature @index/name@ @feature@',
                                              xlabel='x', ylabel='y', color='r')
         self.assertIsInstance(ax1, matplotlib.axes.Axes)
-        self.assertEqual(ax1.get_title(),
-                         'Histogram for feature name {}'.format(gbm1.booster_.feature_name()[27]))
+        self.assertEqual(
+            ax1.get_title(),
+            f'Histogram for feature name {gbm1.booster_.feature_name()[27]}',
+        )
         self.assertEqual(ax1.get_xlabel(), 'x')
         self.assertEqual(ax1.get_ylabel(), 'y')
         self.assertLessEqual(len(ax1.patches), 2)
